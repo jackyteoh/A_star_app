@@ -2,6 +2,7 @@
 # GRAPH-SEARCH Algorithm with A* Search strategy for the 8-puzzle problem
 import random
 import heapq
+import copy
 
 global goal
 goal = [[1, 2, 3], 
@@ -32,10 +33,10 @@ all_manhattan_distances = {1: float('inf'),
 
 global initial_manhattan_sum
 global pqueue
-global visited
+#global visited
 initial_manhattan_sum = 0
 grid = None
-visited = set()
+#visited = set()
 number_of_nodes_generated = 0
 pqueue = []
 
@@ -94,14 +95,19 @@ def find_position_of_zero(grid):
 				return (i, j)
 # Move left INTO the zero position, Zero must NOT have a y value of 2
 # Number of nodes generated before calling move_left?
-def move_left(input_grid, old_manhattan_sum, path):
+def move_left(input_grid, old_manhattan_sum, seen, path):
 	#print("input", input_grid)
 	#print("entered move left")
 	zero_location_x, zero_location_y = find_position_of_zero(input_grid)
 	to_move_x, to_move_y = zero_location_x, zero_location_y + 1
-	new_grid = [arr for arr in input_grid]
+	new_grid = [arr[:] for arr in input_grid]
+	new_seen = copy.deepcopy(seen)
 	#print("new after left", new_grid)
+	#print("new_grid before left swap", new_grid)
+	#print(input_grid)
 	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
+	#print("new_grid after left swap", new_grid)
+	#print(input_grid)
 	#input_grid[zero_location_x][zero_location_y], input_grid[to_move_x][to_move_y] = input_grid[to_move_x][to_move_y], input_grid[zero_location_x][zero_location_y]
 	#print("new after left", new_grid)
 	new_manhattan_sum = get_manhattan_sum(new_grid)
@@ -110,23 +116,24 @@ def move_left(input_grid, old_manhattan_sum, path):
 	if new_manhattan_sum < old_manhattan_sum:
 		#print("less")
 		global pqueue
-		global visited
+		#global visited
 		global number_of_nodes_generated
 		formatted = tuple(tuplify(new_grid))
-		if formatted not in visited:
-			visited.add(formatted)
-			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, path + ["Left"]))
+		if formatted not in new_seen:
+			new_seen.add(formatted)
+			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, new_seen, path + ["Left"]))
 			#print("after left", pqueue)
 			number_of_nodes_generated += 1
 	#else:
 	#	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 
-def move_right(input_grid, old_manhattan_sum, path):
+def move_right(input_grid, old_manhattan_sum, seen, path):
 	#print("input", input_grid)
 	#print("entered move left")
 	zero_location_x, zero_location_y = find_position_of_zero(input_grid)
 	to_move_x, to_move_y = zero_location_x, zero_location_y - 1
-	new_grid = [arr for arr in input_grid]
+	new_grid = [arr[:]for arr in input_grid]
+	new_seen = copy.deepcopy(seen)
 	#print("new after left", new_grid)
 	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 	#input_grid[zero_location_x][zero_location_y], input_grid[to_move_x][to_move_y] = input_grid[to_move_x][to_move_y], input_grid[zero_location_x][zero_location_y]
@@ -137,23 +144,24 @@ def move_right(input_grid, old_manhattan_sum, path):
 	if new_manhattan_sum < old_manhattan_sum:
 		#print("less")
 		global pqueue
-		global visited
+		#global visited
 		global number_of_nodes_generated
 		formatted = tuple(tuplify(new_grid))
-		if formatted not in visited:
-			visited.add(formatted)
-			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, path + ["Left"]))
+		if formatted not in new_seen:
+			new_seen.add(formatted)
+			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, new_seen, path + ["Right"]))
 			#print("after left", pqueue)
 			number_of_nodes_generated += 1
 	#else:
 	#	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 
-def move_up(input_grid, old_manhattan_sum, path):
+def move_up(input_grid, old_manhattan_sum, seen, path):
 	#print("input", input_grid)
 	#print("entered move left")
 	zero_location_x, zero_location_y = find_position_of_zero(input_grid)
 	to_move_x, to_move_y = zero_location_x + 1, zero_location_y
-	new_grid = [arr for arr in input_grid]
+	new_grid = [arr[:] for arr in input_grid]
+	new_seen = copy.deepcopy(seen)
 	#print("new after left", new_grid)
 	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 	#input_grid[zero_location_x][zero_location_y], input_grid[to_move_x][to_move_y] = input_grid[to_move_x][to_move_y], input_grid[zero_location_x][zero_location_y]
@@ -164,23 +172,24 @@ def move_up(input_grid, old_manhattan_sum, path):
 	if new_manhattan_sum < old_manhattan_sum:
 		#print("less")
 		global pqueue
-		global visited
+		#global visited
 		global number_of_nodes_generated
 		formatted = tuple(tuplify(new_grid))
-		if formatted not in visited:
-			visited.add(formatted)
-			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, path + ["Left"]))
+		if formatted not in new_seen:
+			new_seen.add(formatted)
+			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, new_seen, path + ["Up"]))
 			#print("after left", pqueue)
 			number_of_nodes_generated += 1
 	#else:
 	#	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 
-def move_down(input_grid, old_manhattan_sum, path):
+def move_down(input_grid, old_manhattan_sum, seen, path):
 	#print("input", input_grid)
 	#print("entered move left")
 	zero_location_x, zero_location_y = find_position_of_zero(input_grid)
 	to_move_x, to_move_y = zero_location_x - 1, zero_location_y
-	new_grid = [arr for arr in input_grid]
+	new_grid = [arr[:] for arr in input_grid]
+	new_seen = copy.deepcopy(seen)
 	#print("new after left", new_grid)
 	new_grid[zero_location_x][zero_location_y], new_grid[to_move_x][to_move_y] = new_grid[to_move_x][to_move_y], new_grid[zero_location_x][zero_location_y]
 	#input_grid[zero_location_x][zero_location_y], input_grid[to_move_x][to_move_y] = input_grid[to_move_x][to_move_y], input_grid[zero_location_x][zero_location_y]
@@ -191,12 +200,12 @@ def move_down(input_grid, old_manhattan_sum, path):
 	if new_manhattan_sum < old_manhattan_sum:
 		#print("less")
 		global pqueue
-		global visited
+		#global visited
 		global number_of_nodes_generated
 		formatted = tuple(tuplify(new_grid))
-		if formatted not in visited:
-			visited.add(formatted)
-			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, path + ["Left"]))
+		if formatted not in new_seen:
+			new_seen.add(formatted)
+			heapq.heappush(pqueue, (new_manhattan_sum, new_grid, new_seen, path + ["Down"]))
 			#print("after left", pqueue)
 			number_of_nodes_generated += 1
 	#else:
@@ -226,22 +235,30 @@ def solve():
 	global visited
 	global goal
 
-	#grid = generate_random_board()
+	grid = generate_random_board()
 	#print(grid)
-	grid = [[1, 2, 3], 
-			[4, 5, 6], 
-			[0, 7, 8]]
-	first = find_position_of_zero(grid)
-	initial_manhattan_sum = get_manhattan_sum(grid)
+	#grid = [[1, 2, 3], 
+	#		[4, 5, 6], 
+	#		[0, 7, 8]]
+	#first = find_position_of_zero(grid)
+	#initial_manhattan_sum = get_manhattan_sum(grid)
 
-	heapq.heappush(pqueue, (initial_manhattan_sum, grid, []))
-	visited.add(tuple(tuplify(grid)))
-	print(pqueue)
+	initial_seen = set()
+	initial_seen.add(tuple(tuplify(grid)))
+
+	heapq.heappush(pqueue, (initial_manhattan_sum, grid, initial_seen, []))
+	#visited.add(tuple(tuplify(grid)))
+	#print(pqueue)
 	while pqueue:
 		#print(pqueue)
-		#print(visited)
-		popped_sum, popped_grid, popped_path = heapq.heappop(pqueue)
-		#print (popped_sum, popped_grid, popped_path)
+		#print("Visited:")
+		#for board in visited:
+		#	for line in board:
+		#		print(line)
+		#	print(",")
+		popped_sum, popped_grid, popped_visited, popped_path = heapq.heappop(pqueue)
+		#popped_visited.add(tuple(tuplify(popped_grid)))
+		#print (popped_sum, popped_grid, popped_visited, popped_path)
 		#print(popped_grid)
 		#print(tuple(tuplify(popped_grid)))
 		#print(popped_grid)
@@ -250,42 +267,49 @@ def solve():
 		#print(copied)
 		if popped_grid == goal:
 			print ("Hey we did it!")
-			print(visited)
+			#print(visited)
+			#print(popped_visited)
 			print(number_of_nodes_generated)
 			print(popped_path)
 			return
 		zero = find_position_of_zero(popped_grid)
+		print("Sum:", popped_sum, "Popped:", popped_grid, "Path:", popped_path)
 		# Left
 		if zero[1] != 2:
-			copied = [arr for arr in popped_grid]
+			#copied = [arr for arr in popped_grid]
 			#print(popped_grid, "vs", copied)
 			#print(copied)
-			print("Go left")
-			move_left(copied, popped_sum, popped_path)
-			#print(pqueue)
+			#print("Go left")
+			#move_left(popped_grid, popped_sum, popped_path)
+			#print("before left:", popped_visited)
+			move_left(popped_grid, popped_sum, popped_visited, popped_path)
+			#print("after left:", popped_visited)
+			#print("Pqueue after left:", pqueue)
 		# Right
 		if zero[1] != 0:
-			copied = [arr for arr in popped_grid]
-			print("Go right")
+			#copied = [arr for arr in popped_grid]
+			#print("Go right")
 			#print("Popped grid @ Right", popped_grid)
-			move_right(copied, popped_sum, popped_path)
+			move_right(popped_grid, popped_sum, popped_visited, popped_path)
 			#print(pqueue)
 		# Up
 		if zero[0] != 2:
-			copied = [arr for arr in popped_grid]
-			print("Go up")
-			move_up(copied, popped_sum, popped_path)
+			#copied = [arr for arr in popped_grid]
+			#print("Go up")
+			move_up(popped_grid, popped_sum, popped_visited, popped_path)
 			#print(pqueue)
 		# Down
 		if zero[0] != 0:
-			copied = [arr for arr in popped_grid]
+			#print("Popped:", popped_grid)
+			#copied = [arr for arr in popped_grid]
 			#print(popped_grid, "vs", copied)
-			print("Go down")
-			move_down(copied, popped_sum, popped_path)
+			#print("Go down")
+			move_down(popped_grid, popped_sum, popped_visited, popped_path)
 			#print(pqueue)
-
-		#print(pqueue)
-
+		#print("end of while", popped_visited)
+		print(pqueue)
+		#print("Next iteration")
+	print("Answer not found?")
 
 solve()
 
