@@ -3,11 +3,16 @@
 import random
 import heapq
 import copy
+import multiprocessing
+import time
 
 global goal
 goal = [[1, 2, 3], 
 		[4, 5, 6], 
 		[7, 8, 0]]
+#goal = [[4, 2, 1], 
+#		[8, 7, 0], 
+#		[3, 5, 6]]
 
 positions_of_goal = {1: (0, 0),
 					 2: (0, 1),
@@ -33,10 +38,10 @@ all_manhattan_distances = {1: float('inf'),
 
 global initial_manhattan_sum
 global pqueue
-#global visited
+global visited
 initial_manhattan_sum = 0
 grid = None
-#visited = set()
+visited = {}
 number_of_nodes_generated = 0
 pqueue = []
 
@@ -63,7 +68,7 @@ def get_manhattan_sum(grid):
 
 	return manhattan_sum'''
 
-def generate_random_board():
+def generate_initial_board():
 	# Create a randomized 3x3 matrix
 	grid = [[0]*3 for _ in range(3)]
 	possible_numbers = set(num for num in range(0, 9))
@@ -93,6 +98,111 @@ def find_position_of_zero(grid):
 		for j in range(3):
 			if grid[i][j] == 0:
 				return (i, j)
+
+# Move INTO 0, pos of 0 = (x1, y1)
+def move(board, x1, y1, x2, y2):
+	#print("Move board:", board)
+	if x2 >= 0 and x2 < 3 and y2 >= 0 and y2 < 3:
+		copied = copy.deepcopy(board)
+		#print("copied board: ", copied)
+		copied[x1][y1], copied[x2][y2] = copied[x2][y2], copied[x1][y1]
+		#print("After swap copy = ", copied)
+		return copied
+	else:
+		return None
+
+def potential_children(board, depth_level, path):
+	global pqueue
+	global visited
+	global number_of_nodes_generated
+	x, y = find_position_of_zero(board)
+	#Left, Right, Up, Down
+	move_list = [[x, y + 1, "Left"], [x, y - 1, "Right"], [x + 1, y, "Up"], [x - 1, y, "Down"]]
+	for direction in move_list:
+		#print("Board:", board)
+		child = move(board, x, y, direction[0], direction[1])
+		#print("Child:", child)
+		if child:
+			number_of_nodes_generated += 1
+			tuplified = tuple(tuplify(child))
+			to_add = (get_manhattan_sum(child) + depth_level, child, depth_level + 1, path + [direction[2]])
+			if tuplified not in visited:
+				#to_add = (get_manhattan_sum(child) + depth_level, child, depth_level + 1, path + [direction[2]])
+				heapq.heappush(pqueue, to_add)
+			else:
+				if visited[tuplified] >= to_add[0]:
+					heapq.heappush(pqueue, to_add)
+			visited[tuplified] = to_add[0]
+
+
+def solve():
+	global pqueue
+	global visited
+	global initial_manhattan_sum
+	global goal
+	global number_of_nodes_generated
+
+	grid = generate_initial_board()
+	#grid = [[1, 2, 3], 
+	#		[4, 5, 6], 
+	#		[0, 7, 8]]
+	#grid = [[8, 1, 2], 
+	#		[3, 6, 4], 
+	#		[5, 0, 7]]
+	#first = find_position_of_zero(grid)
+	#initial_manhattan_sum = get_manhattan_sum(grid)
+
+	# sum, grid, depth, paths?
+	heapq.heappush(pqueue, (initial_manhattan_sum, grid, 0, []))
+	visited[tuple(tuplify(grid))] = initial_manhattan_sum
+	#visited.append(grid)
+	print(grid)
+	while pqueue:
+		popped_sum, popped_grid, popped_depth, popped_path = heapq.heappop(pqueue)
+		#print(popped_sum, popped_grid, popped_depth, popped_path)
+		if popped_grid == goal:
+			print(popped_grid)
+			print("Found!")
+			print(popped_depth)
+			print(number_of_nodes_generated)
+			#print(visited.keys())
+			print(popped_path)
+			return
+		else:
+			potential_children(popped_grid, popped_depth, popped_path)
+			#visited.append(popped_grid)
+			#print(pqueue)
+			#print (pqueue)
+	print("Impossible to solve!")
+
+if __name__ == '__main__':
+	p = multiprocessing.Process(target = solve, name = "Solve")
+	p.start()
+
+	time.sleep(15)
+
+	if p.is_alive():
+		print("Impossible to solve! Timed out")
+		p.terminate()
+		p.join()
+
+
+#print(visited) {((2, 4, 5), (0, 6, 8), (3, 1, 7))}
+#print(listify(tupled)) [[2, 4, 5], [0, 6, 8], [3, 1, 7]]
+
+'''if tuple(tupled) in visited:
+	print("True")
+next_rand = generate_random_board()
+tupled_rand = [tuple(arr) for arr in next_rand]
+visited.add(tuple(tupled_rand))
+print(visited)
+visited.add(tuple(tupled_rand))
+print(visited)'''
+
+#heapq.heappush(pqueue, _, move?)
+
+'''
+
 # Move left INTO the zero position, Zero must NOT have a y value of 2
 # Number of nodes generated before calling move_left?
 def move_left(input_grid, old_manhattan_sum, seen, path):
@@ -217,7 +327,7 @@ def move_down(input_grid, old_manhattan_sum, seen, path):
 #print(find_position_of_zero(grid))
 #tupled = tuple(tuplify(grid))
 #visited.add(tupled)
-'''test = [[1, 2, 3], 
+test = [[1, 2, 3], 
 		[4, 5, 6], 
 		[7, 0, 8]]
 
@@ -227,7 +337,7 @@ print(test_sum)
 print(pqueue)
 move_left(test, test_sum)
 print(pqueue)
-print(visited)'''
+print(visited)
 
 def solve():
 	global pqueue
@@ -245,8 +355,9 @@ def solve():
 
 	initial_seen = set()
 	initial_seen.add(tuple(tuplify(grid)))
+	initial_depth = 0
 
-	heapq.heappush(pqueue, (initial_manhattan_sum, grid, initial_seen, []))
+	heapq.heappush(pqueue, (initial_manhattan_sum + initial depth, grid, initial_seen, initial_depth, []))
 	#visited.add(tuple(tuplify(grid)))
 	#print(pqueue)
 	while pqueue:
@@ -256,7 +367,7 @@ def solve():
 		#	for line in board:
 		#		print(line)
 		#	print(",")
-		popped_sum, popped_grid, popped_visited, popped_path = heapq.heappop(pqueue)
+		popped_sum, popped_grid, popped_visited, popped_depth, popped_path = heapq.heappop(pqueue)
 		#popped_visited.add(tuple(tuplify(popped_grid)))
 		#print (popped_sum, popped_grid, popped_visited, popped_path)
 		#print(popped_grid)
@@ -273,7 +384,7 @@ def solve():
 			print(popped_path)
 			return
 		zero = find_position_of_zero(popped_grid)
-		print("Sum:", popped_sum, "Popped:", popped_grid, "Path:", popped_path)
+		#print("Sum:", popped_sum, "Popped:", popped_grid, "Path:", popped_path)
 		# Left
 		if zero[1] != 2:
 			#copied = [arr for arr in popped_grid]
@@ -282,7 +393,7 @@ def solve():
 			#print("Go left")
 			#move_left(popped_grid, popped_sum, popped_path)
 			#print("before left:", popped_visited)
-			move_left(popped_grid, popped_sum, popped_visited, popped_path)
+			move_left(popped_grid, popped_sum + popped_depth, popped_visited, popped_depth + 1, popped_path)
 			#print("after left:", popped_visited)
 			#print("Pqueue after left:", pqueue)
 		# Right
@@ -311,24 +422,22 @@ def solve():
 		#print("Next iteration")
 	print("Answer not found?")
 
-solve()
 
 
-#print(visited) {((2, 4, 5), (0, 6, 8), (3, 1, 7))}
-#print(listify(tupled)) [[2, 4, 5], [0, 6, 8], [3, 1, 7]]
 
-'''if tuple(tupled) in visited:
-	print("True")
-next_rand = generate_random_board()
-tupled_rand = [tuple(arr) for arr in next_rand]
-visited.add(tuple(tupled_rand))
-print(visited)
-visited.add(tuple(tupled_rand))
-print(visited)'''
 
-#heapq.heappush(pqueue, _, move?)
 
-'''
+
+
+
+
+
+
+
+
+
+
+
 # Move left, right, up, down
 # This move will be the move INTO the 0 position. 
 def move_left(x, y, board, path, manhattan_sum):
